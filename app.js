@@ -1,27 +1,4 @@
-// Global Tab Switching Handler (Instant & Fail-Safe)
-window.switchTab = function(tabId) {
-    try {
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-        const targetBtns = document.querySelectorAll(`[data-tab="${tabId}"]`);
-        const targetContent = document.getElementById(tabId);
-
-        targetBtns.forEach(btn => btn.classList.add('active'));
-        if (targetContent) {
-            targetContent.classList.add('active');
-        }
-
-        if (typeof window.renderAll === 'function') {
-            setTimeout(() => {
-                try { window.renderAll(); } catch(e){}
-            }, 50);
-        }
-    } catch(e) {
-        console.error("switchTab error:", e);
-    }
-};
-
+// BrewCost Pro Application State & Logic
 document.addEventListener('DOMContentLoaded', () => {
 
     // Safely get item from localStorage with error catching
@@ -1070,7 +1047,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try { renderSavedRecipesTable(); } catch(e){ console.error("renderSavedRecipesTable:", e); }
     }
-    window.renderAll = renderAll;
 
     // Render Barista Recipe Cards Grid with Margin Badge & Bar Card Print Button
     function renderRecipeCardsGrid(filterKeyword = "") {
