@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบคำนวณต้นทุนและวิเคราะห์กำไร ร้านกาแฟ (BrewCost Pro)</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header / Navbar -->
+        <header class="app-header">
+            <div class="header-brand">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-mug-hot"></i>
+                </div>
+                <div>
+                    <h1>BrewCost <span class="badge-pro">PRO</span></h1>
+                    <p class="subtitle">ระบบคำนวณต้นทุน วางแผนราคา และวิเคราะห์จุดคุ้มทุนร้านกาแฟ</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-theme-toggle" id="btnThemeToggle">
+                    <i class="fa-solid fa-moon"></i> <span id="themeToggleText">โหมดมืด</span>
+                </button>
+                <input type="file" id="fileInputRecipe" accept=".json,.csv" style="display: none;">
+                <button class="btn btn-secondary" id="btnExport">
+                    <i class="fa-solid fa-file-export"></i> ส่งออกรายงาน
+                </button>
+                <button class="btn btn-danger" id="btnResetAllData">
+                    <i class="fa-solid fa-trash-can"></i> ล้างข้อมูลทั้งหมด
+                </button>
+            </div>
+        </header>
+
+        <!-- KPI Summary Cards Banner -->
+        <section class="kpi-banner">
+            <div class="kpi-card highlight-amber">
+                <div class="kpi-icon"><i class="fa-solid fa-coins"></i></div>
+                <div class="kpi-info">
+                    <span class="kpi-label">ต้นทุนวัตถุดิบ/แก้ว (COGS)</span>
+                    <h2 class="kpi-value" id="kpiCogs">฿0.00</h2>
+                    <span class="kpi-subtext" id="kpiWastageText">รวมสูญเสีย (Wastage) 5%</span>
+                </div>
+            </div>
+            <div class="kpi-card highlight-emerald">
+                <div class="kpi-icon"><i class="fa-solid fa-tag"></i></div>
+                <div class="kpi-info">
+                    <span class="kpi-label">ราคาขายแนะนำ (หน้าร้าน)</span>
+                    <h2 class="kpi-value" id="kpiRecPrice">฿0.00</h2>
+                    <span class="kpi-subtext" id="kpiMarginText">เป้าหมาย Food Cost 30%</span>
+                </div>
+            </div>
+            <div class="kpi-card highlight-blue">
+                <div class="kpi-icon"><i class="fa-solid fa-motorcycle"></i></div>
+                <div class="kpi-info">
+                    <span class="kpi-label">ราคาแนะนำ (Delivery GP 30%)</span>
+                    <h2 class="kpi-value" id="kpiDeliveryPrice">฿0.00</h2>
+                    <span class="kpi-subtext">เพื่อให้ได้กำไรสุทธิเท่าหน้าร้าน</span>
+                </div>
+            </div>
+            <div class="kpi-card highlight-purple">
+                <div class="kpi-icon"><i class="fa-solid fa-chart-line"></i></div>
+                <div class="kpi-info">
+                    <span class="kpi-label">จุดคุ้มทุน (Break-Even)</span>
+                    <h2 class="kpi-value" id="kpiBreakEvenCups">0 แก้ว/วัน</h2>
+                    <span class="kpi-subtext" id="kpiBreakEvenMonth">ประมาณ 0 แก้ว/เดือน</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Navigation Tabs (Fit 100% Screen Width) -->
+        <nav class="app-tabs">
+            <button class="tab-btn active" data-tab="tab-recipe">
+                <i class="fa-solid fa-flask"></i> 1. คำนวณสูตร
+            </button>
+            <button class="tab-btn" data-tab="tab-recipe-cards">
+                <i class="fa-solid fa-book-bookmark"></i> 2. คลังสูตรชง
+            </button>
+            <button class="tab-btn" data-tab="tab-master-ingredients">
+                <i class="fa-solid fa-boxes-stacked"></i> 3. คลังวัตถุดิบ
+            </button>
+            <button class="tab-btn" data-tab="tab-overhead">
+                <i class="fa-solid fa-building"></i> 4. ค่าใช้จ่ายประจำ
+            </button>
+            <button class="tab-btn" data-tab="tab-breakeven">
+                <i class="fa-solid fa-chart-pie"></i> 5. จุดคุ้มทุน
+            </button>
+            <button class="tab-btn" data-tab="tab-menu-manager">
+                <i class="fa-solid fa-list-check"></i> 6. เปรียบเทียบต้นทุน
+            </button>
+        </nav>
+
+        <!-- TAB 1: RECIPE COST CALCULATOR -->
+        <main class="tab-content active" id="tab-recipe">
+            <div class="grid-layout grid-2col">
+                <!-- Left Panel: Recipe Inputs -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-coffee"></i> รายละเอียดสูตรเครื่องดื่ม</h2>
+                        
+                        <!-- Recipe Selection Dropdown + Input -->
+                        <div class="recipe-selector-box mt-2">
+                            <label for="selectRecipeDropdown" style="font-size:12px; color:var(--text-muted); font-weight:600; display:block; margin-bottom:4px;">
+                                <i class="fa-solid fa-bars-staggered"></i> เลือกสูตรด่วนจากคลังสูตรที่บันทึกไว้:
+                            </label>
+                            <select id="selectRecipeDropdown" class="form-control mb-2" style="font-weight:600;">
+                                <option value="">-- เลือกเมนูกาแฟ/เครื่องดื่ม --</option>
+                                <optgroup label="📚 สูตรที่บันทึกในคลัง (Saved Menu Vault)" id="savedOptionsGroup">
+                                    <!-- Dynamic saved recipes options -->
+                                </optgroup>
+                            </select>
+
+                            <label for="recipeName" style="font-size:12px; color:var(--text-muted); font-weight:600; display:block; margin-bottom:4px;">
+                                ชื่อเมนูที่กำลังแก้ไข:
+                            </label>
+                            <input type="text" id="recipeName" class="form-control input-lg mb-2" value="กาแฟลาเต้เย็น (Iced Latte 16oz)">
+
+                            <!-- Cup Size & Style Scaler Pills -->
+                            <div class="size-scaler-container" style="background:var(--bg-input); padding:10px 12px; border-radius:8px; border:1px solid var(--border-color);">
+                                <div class="flex-between align-items-center mb-2">
+                                    <span class="bold" style="font-size:11px; color:var(--text-main);"><i class="fa-solid fa-mug-hot color-amber"></i> ปรับสัดส่วนประเภท & ขนาดแก้ว:</span>
+                                    <span class="badge badge-info" id="scalerRatioBadge" style="font-size:10px;">16oz เย็น (1.0x)</span>
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:6px;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-size:10px; color:var(--text-muted); font-weight:700; width:50px;">ประเภท:</span>
+                                        <div class="btn-group-segmented" id="styleSelectorGroup">
+                                            <button class="btn-segment active" data-style="iced"><i class="fa-solid fa-cube"></i> เย็น</button>
+                                            <button class="btn-segment" data-style="hot"><i class="fa-solid fa-mug-hot"></i> ร้อน (8oz)</button>
+                                            <button class="btn-segment" data-style="frappe"><i class="fa-solid fa-blender"></i> ปั่น</button>
+                                        </div>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-size:10px; color:var(--text-muted); font-weight:700; width:50px;">ขนาดแก้ว:</span>
+                                        <div class="btn-group-segmented" id="sizeSelectorGroup">
+                                            <button class="btn-segment" data-size="6">6 oz (เล็ก)</button>
+                                            <button class="btn-segment" data-size="12">12 oz</button>
+                                            <button class="btn-segment active" data-size="16">16 oz (มาตรฐาน)</button>
+                                            <button class="btn-segment" data-size="22">22 oz (แก้วใหญ่)</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Ingredient Table -->
+                        <div class="table-responsive">
+                            <table class="table" id="ingredientsTable">
+                                <thead>
+                                    <tr>
+                                        <th style="min-width: 130px;">รายการวัตถุดิบ/บรรจุภัณฑ์</th>
+                                        <th style="width: 90px; text-align:center;">ราคาซื้อ (บาท)</th>
+                                        <th style="width: 140px; text-align:center;">ปริมาณสุทธิ/แพ็ค</th>
+                                        <th style="width: 140px; text-align:center;">ปริมาณที่ใช้</th>
+                                        <th style="width: 90px; text-align:right;">ต้นทุน/แก้ว</th>
+                                        <th style="width: 36px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ingredientsList">
+                                    <!-- Dynamic rows added by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="table-actions">
+                            <button class="btn btn-sm btn-primary" id="btnSelectFromMaster">
+                                <i class="fa-solid fa-cart-plus"></i> เลือกจากคลังวัตถุดิบกลาง
+                            </button>
+                            <button class="btn btn-sm btn-outline" id="btnAddIngredient">
+                                <i class="fa-solid fa-plus"></i> เพิ่มวัตถุดิบใหม่
+                            </button>
+                            <button class="btn btn-sm btn-outline" id="btnAddPackage">
+                                <i class="fa-solid fa-box-open"></i> เพิ่มบรรจุภัณฑ์
+                            </button>
+                        </div>
+
+                        <hr class="divider">
+
+                        <!-- Wastage & Buffer Settings -->
+                        <div class="settings-group">
+                            <div class="form-group">
+                                <label for="wastagePercent">
+                                    % อัตราการเผื่อสูญเสีย/วัตถุดิบเสีย (Wastage Buffer)
+                                    <i class="fa-solid fa-circle-info tooltip-icon" title="เผื่อสำหรับการปรับเบอร์บดกาแฟ นมติดพิชเชอร์ นมเททิ้ง ช็อตเสีย"></i>
+                                </label>
+                                <div class="slider-with-input">
+                                    <input type="range" id="wastageSlider" min="0" max="20" value="5" step="1">
+                                    <input type="number" id="wastagePercent" class="form-control width-80" value="5" min="0" max="30">
+                                    <span>%</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="targetFoodCost">
+                                    % ต้นทุนวัตถุดิบเป้าหมาย (% Target Food Cost)
+                                    <i class="fa-solid fa-circle-info tooltip-icon" title="มาตรฐานร้านกาแฟอยู่ที่ 25% - 35% ยิ่ง % น้อย กำไรขั้นต้นยิ่งสูง"></i>
+                                </label>
+                                <div class="slider-with-input">
+                                    <input type="range" id="foodCostSlider" min="15" max="50" value="30" step="1">
+                                    <input type="number" id="targetFoodCost" class="form-control width-80" value="30" min="10" max="80">
+                                    <span>%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <button class="btn btn-primary" id="btnSaveCurrentRecipe">
+                                <i class="fa-solid fa-bookmark"></i> บันทึกสูตรนี้เข้าคลังเมนู
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Cost Calculation Breakdown & Pricing -->
+                <div class="card border-accent">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-calculator"></i> สรุปต้นทุนและการตั้งราคาขาย</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="cost-summary-box">
+                            <div class="summary-row">
+                                <span>ต้นทุนวัตถุดิบเพียวๆ (Raw Material):</span>
+                                <span class="summary-val" id="rawMaterialCost">฿0.00</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>ค่าเผื่อการสูญเสีย (+<span id="displayWastagePercent">5</span>%):</span>
+                                <span class="summary-val" id="wastageCost">฿0.00</span>
+                            </div>
+                            <div class="summary-row font-lg bold border-top pt-2">
+                                <span>ต้นทุนสุทธิรวมต่อแก้ว (Total COGS):</span>
+                                <span class="summary-val color-amber" id="totalCogsDisplay">฿0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Pricing Simulation -->
+                        <div class="pricing-simulation mt-3">
+                            <h3><i class="fa-solid fa-tags"></i> การจำลองตั้งราคาขาย (Pricing Simulator)</h3>
+                            
+                            <div class="price-input-card">
+                                <label for="customSellingPrice">ราคาขายหน้าร้านจริงที่ต้องการขาย (บาท):</label>
+                                <div class="input-currency">
+                                    <span class="currency-symbol">฿</span>
+                                    <input type="number" id="customSellingPrice" class="form-control input-lg" value="65" min="1">
+                                </div>
+                            </div>
+
+                            <div class="profit-metrics-grid">
+                                <div class="metric-box">
+                                    <span class="metric-label">กำไรขั้นต้น (Gross Profit)</span>
+                                    <span class="metric-value color-emerald" id="grossProfitVal">฿0.00</span>
+                                    <span class="metric-sub" id="grossMarginPercent">0%</span>
+                                </div>
+                                <div class="metric-box">
+                                    <span class="metric-label">สัดส่วน Food Cost จริง</span>
+                                    <span class="metric-value" id="actualFoodCostPercent">0%</span>
+                                    <span class="metric-sub" id="foodCostStatus">
+                                        <!-- Margin Badge Indicator -->
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Sales Channel Profit Comparison Matrix -->
+                            <div class="card mt-3" style="border:1px solid var(--border-color); background:var(--bg-card);">
+                                <div class="card-header" style="padding:10px 12px; background:var(--bg-input);">
+                                    <h4 style="font-size:12px; margin:0;"><i class="fa-solid fa-scale-balanced color-blue"></i> เปรียบเทียบกำไรช่องทางขาย (Sales Channel Matrix)</h4>
+                                </div>
+                                <div class="card-body" style="padding:10px;">
+                                    <div class="channel-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                                        <div style="background:#ecfdf5; border:1px solid #a7f3d0; padding:8px; border-radius:6px;">
+                                            <div class="flex-between">
+                                                <strong style="font-size:11px; color:#065f46;">🏪 ขายหน้าร้าน</strong>
+                                                <span style="font-size:9px; background:#d1fae5; color:#047857; padding:1px 4px; border-radius:3px; font-weight:700;">GP 0%</span>
+                                            </div>
+                                            <div class="mt-1" style="font-size:10px; color:#1e293b;">
+                                                <div>ราคาขาย: <strong id="matrixDineInPrice">฿65.00</strong></div>
+                                                <div>กำไรสุทธิ: <strong class="color-emerald" id="matrixDineInProfit">฿35.53</strong></div>
+                                                <div style="font-size:9px; color:#059669;" id="matrixDineInMargin">(กำไร 54.7%)</div>
+                                            </div>
+                                        </div>
+
+                                        <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:8px; border-radius:6px;">
+                                            <div class="flex-between">
+                                                <strong style="font-size:11px; color:#1e40af;">🛵 ขาย Delivery</strong>
+                                                <span style="font-size:9px; background:#dbeafe; color:#1d4ed8; padding:1px 4px; border-radius:3px; font-weight:700;" id="matrixDeliveryGpTag">GP 30%+VAT</span>
+                                            </div>
+                                            <div class="mt-1" style="font-size:10px; color:#1e293b;">
+                                                <div>ราคาตั้งขาย: <strong class="color-blue" id="matrixDeliveryPrice">฿96.00</strong></div>
+                                                <div>กำไรหลังหัก GP: <strong class="color-blue" id="matrixDeliveryProfit">฿36.06</strong></div>
+                                                <div style="font-size:9px; color:#2563eb;" id="matrixDeliveryMargin">(กำไร 37.6%)</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Delivery Pricing Calculator -->
+                            <div class="delivery-calc-card mt-2">
+                                <h4><i class="fa-solid fa-motorcycle"></i> คำนวณราคาขายเดลิเวอรี่ (Grab / Lineman / ShopeeFood)</h4>
+                                <div class="form-row align-items-center">
+                                    <div class="col">
+                                        <label for="deliveryGpPercent">ค่า GP แพลตฟอร์ม (%):</label>
+                                        <input type="number" id="deliveryGpPercent" class="form-control" value="30" min="0" max="50">
+                                    </div>
+                                    <div class="col">
+                                        <label for="vatIncluded">ภาษี VAT 7% เพิ่มเติม?</label>
+                                        <select id="vatIncluded" class="form-control">
+                                            <option value="yes">คิด VAT 7% ของ GP</option>
+                                            <option value="no">ไม่รวม VAT</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="delivery-result mt-2">
+                                    <div class="result-row">
+                                        <span>ราคาขายที่ควรตั้งบนแอป Delivery:</span>
+                                        <strong class="color-blue font-lg" id="deliverySuggestedPrice">฿0.00</strong>
+                                    </div>
+                                    <small class="text-muted">*คำนวณเพื่อให้ได้กำไรสุทธิหลังหัก GP/VAT เท่ากับการขายหน้าร้าน ฿<span id="targetProfitEqual">0.00</span></small>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Medium Ingredient Distribution Chart -->
+                        <div class="chart-container mt-3">
+                            <h4 class="text-center mb-2" style="font-size:13px;"><i class="fa-solid fa-chart-pie color-amber"></i> สัดส่วนต้นทุนวัตถุดิบในแก้วนี้</h4>
+                            <div style="max-width: 420px; height: 280px; margin: 0 auto; width: 100%;">
+                                <canvas id="recipeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- TAB 2: DEDICATED COFFEE RECIPE CARDS BOOK -->
+        <main class="tab-content" id="tab-recipe-cards">
+            <div class="card">
+                <div class="card-header flex-between" style="flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <h2><i class="fa-solid fa-book-bookmark"></i> คลังเก็บสูตรชงกาแฟ (Barista Recipe Book)</h2>
+                        <p class="subtitle">คลังเก็บสูตรชงกาแฟฉบับบาริสต้า พร้อมพารามิเตอร์การสกัด (ผงกาแฟ / น้ำสกัด / เวลาสกัด) และขั้นตอนการชงประจำบาร์</p>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <input type="text" id="searchRecipeCardInput" class="form-control" placeholder="🔍 ค้นหาสูตรกาแฟ..." style="width:170px;">
+                        <button class="btn btn-primary btn-sm" id="btnAddRecipeModal">
+                            <i class="fa-solid fa-plus"></i> เพิ่มสูตรกาแฟใหม่ (Manual)
+                        </button>
+                        <button class="btn btn-outline btn-sm" id="btnLoadSampleCafeData">
+                            <i class="fa-solid fa-mug-hot"></i> โหลดสูตรตัวอย่าง
+                        </button>
+                        <button class="btn btn-outline btn-sm" id="btnExportBaristaRecipes">
+                            <i class="fa-solid fa-download"></i> ส่งออกคลังสูตร (Export)
+                        </button>
+                        <button class="btn btn-outline btn-sm" id="btnDownloadBaristaCSVTemplate">
+                            <i class="fa-solid fa-file-excel"></i> โหลดเทมเพลต Excel
+                        </button>
+                        <button class="btn btn-outline btn-sm" id="btnUploadBaristaRecipes">
+                            <i class="fa-solid fa-file-import"></i> อัปโหลดไฟล์ Excel
+                        </button>
+                        <input type="file" id="fileInputBaristaRecipes" accept=".csv,.json" style="display: none;">
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="recipe-book-grid" id="recipeCardsGrid">
+                        <!-- Dynamic Recipe Cards Grid -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- TAB 3: MASTER INGREDIENTS CATALOGUE -->
+        <main class="tab-content" id="tab-master-ingredients">
+            <div class="card">
+                <div class="card-header flex-between" style="flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <h2><i class="fa-solid fa-boxes-stacked"></i> คลังวัตถุดิบกลาง (Master Ingredients Catalogue)</h2>
+                        <p class="subtitle">จัดการราคาซื้อและขนาดแพ็คเกจของวัตถุดิบกลาง เมื่ออัปเดตราคาที่นี่ ทุกสูตรในร้านจะคำนวณต้นทุนใหม่ให้อัตโนมัติ!</p>
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button class="btn btn-outline btn-sm" id="btnOpenBlendModal">
+                            <i class="fa-solid fa-mug-saucer color-amber"></i> คำนวณเบลนด์เมล็ดกาแฟ
+                        </button>
+                        <button class="btn btn-outline btn-sm" id="btnOpenSupplierCompareModal">
+                            <i class="fa-solid fa-code-compare color-amber"></i> เปรียบเทียบซัพพลายเออร์
+                        </button>
+                        <button class="btn btn-outline btn-sm" id="btnDownloadMasterCSVTemplate">
+                            <i class="fa-solid fa-file-excel"></i> โหลดเทมเพลต Excel คลังวัตถุดิบ
+                        </button>
+                        <button class="btn btn-outline btn-sm" id="btnUploadMasterStock">
+                            <i class="fa-solid fa-file-import"></i> อัปโหลดไฟล์ Excel คลังวัตถุดิบ
+                        </button>
+                        <input type="file" id="fileInputMasterStock" accept=".csv,.json" style="display: none;">
+                        <button class="btn btn-primary btn-sm" id="btnAddMasterItem">
+                            <i class="fa-solid fa-plus"></i> เพิ่มวัตถุดิบใหม่เข้าคลัง
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="masterTable">
+                            <thead>
+                                <tr>
+                                    <th>ชื่อวัตถุดิบ / รายการ</th>
+                                    <th style="width: 140px;">ราคาซื้อยกแพ็ค (บาท)</th>
+                                    <th style="width: 140px;">ปริมาณสุทธิ/แพ็ค</th>
+                                    <th style="width: 100px;">หน่วย</th>
+                                    <th style="width: 140px;">ต้นทุนต่อหน่วย</th>
+                                    <th style="width: 60px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="masterIngredientsList">
+                                <!-- Dynamic Master Ingredient Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Card: Reorder Quantity Calculator (Weekly/Monthly Purchasing Planner) -->
+                <div class="card mt-4" id="reorderPlannerCard">
+                    <div class="card-header flex-between" style="flex-wrap:wrap; gap:12px; background:rgba(37, 99, 235, 0.06); border-bottom:1px solid rgba(37, 99, 235, 0.15); padding:10px 16px;">
+                        <div>
+                            <h3 style="font-size:15px; color:#1d4ed8; margin:0;"><i class="fa-solid fa-cart-flatbed"></i> 📦 ระบบคำนวณยอดสั่งซื้อวัตถุดิบประจำสัปดาห์ / เดือน (Reorder Planner)</h3>
+                            <p class="subtitle" style="font-size:11px; margin-top:2px;">คำนวณปริมาณวัตถุดิบและจำนวนแพ็คเกจที่ต้องสั่งซื้อตามเป้าขายแก้วของร้าน เพื่อวางแผนสต็อกล่วงหน้า</p>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:12px; font-weight:700; color:var(--text-muted);">วางแผนรอบ:</span>
+                            <select id="reorderPeriodSelect" class="form-control" style="width:130px; font-weight:600; font-size:12px;">
+                                <option value="7">7 วัน (รายสัปดาห์)</option>
+                                <option value="15">15 วัน (รายปักษ์)</option>
+                                <option value="30" selected>30 วัน (รายเดือน)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:10px 14px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <span style="font-size:12px; color:var(--text-muted); font-weight:600;">เป้าขายคาดการณ์:</span>
+                                <strong id="reorderEstCupsTotal" style="font-size:15px; color:#2563eb; font-weight:800; margin-left:6px;">1,500 แก้ว</strong>
+                                <span style="font-size:11px; color:var(--text-muted); margin-left:4px;">(เฉลี่ยวันละ <span id="reorderEstCupsDay">50</span> แก้ว)</span>
+                            </div>
+                            <div>
+                                <span style="font-size:12px; color:var(--text-muted); font-weight:600;">งบประมาณจัดซื้อวัตถุดิบรอบนี้:</span>
+                                <strong id="reorderTotalBudget" style="font-size:16px; color:#16a34a; font-weight:800; margin-left:6px;">฿0.00</strong>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table" style="font-size:12px;">
+                                <thead>
+                                    <tr>
+                                        <th>รายการวัตถุดิบ</th>
+                                        <th>ปริมาณสุทธิที่ต้องใช้</th>
+                                        <th>ขนาดแพ็คเกจ</th>
+                                        <th style="width:150px; text-align:center;">จำนวนแพ็คที่ต้องสั่งซื้อ</th>
+                                        <th style="width:140px; text-align:right;">งบจัดซื้อ (บาท)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reorderTableBody">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- TAB 4: FIXED OVERHEAD & MONTHLY EXPENSES -->
+        <main class="tab-content" id="tab-overhead">
+            <div class="grid-layout grid-2col">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-receipt"></i> ค่าใช้จ่ายประจำเดือน (Fixed Operating Costs)</h2>
+                        <p class="subtitle">ค่าใช้จ่ายที่เกิดขึ้นทุกเดือน ไม่ว่าจะขายได้กี่แก้วก็ตาม</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="overhead-list" id="overheadList">
+                            <!-- Dynamic Overhead Rows -->
+                        </div>
+
+                        <button class="btn btn-outline btn-sm mt-3" id="btnAddOverhead">
+                            <i class="fa-solid fa-plus"></i> เพิ่มรายการค่าใช้จ่ายประจำ
+                        </button>
+
+                        <hr class="divider">
+
+                        <!-- Initial Investment CapEx & Asset Depreciation Box -->
+                        <div class="depreciation-box">
+                            <div class="flex-between mb-2">
+                                <h3><i class="fa-solid fa-coins"></i> รายการเงินลงทุนแรกเริ่มเปิดร้าน (Capital Expenditure / CapEx)</h3>
+                                <button class="btn btn-sm btn-primary" id="btnAddInvestmentItem">
+                                    <i class="fa-solid fa-plus"></i> เพิ่มรายการเงินลงทุน
+                                </button>
+                            </div>
+                            <p class="text-muted fs-sm mb-2">ระบุเครื่องชงกาแฟ ค่าตกแต่งร้าน เครื่องบด และอุปกรณ์แรกเริ่ม เพื่อคำนวณต้นทุนเงินลงทุนรวมและค่าเสื่อมราคาจริง</p>
+
+                            <div class="table-responsive mb-2">
+                                <table class="table" style="background:var(--bg-card); border-radius:6px;">
+                                    <thead>
+                                        <tr>
+                                            <th>รายการสินทรัพย์ / ค่าใช้จ่ายลงทุน</th>
+                                            <th style="width: 140px;">ราคาซื้อ (บาท)</th>
+                                            <th style="width: 40px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="investmentIngredientsList">
+                                        <!-- Dynamic CapEx Rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="form-row align-items-center mb-2">
+                                <div class="col" style="flex:2;">
+                                    <label for="eqYears" class="bold" style="font-size:12px;">อายุการใช้งานอุปกรณ์ตั้งเป้า (ปี):</label>
+                                </div>
+                                <div class="col" style="flex:1;">
+                                    <input type="number" id="eqYears" class="form-control" value="3" min="1" max="10">
+                                </div>
+                            </div>
+
+                            <div class="depreciation-result mt-2" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                                <div>
+                                    <span style="font-size:11px; display:block; color:var(--text-muted);">รวมเงินลงทุนแรกเริ่มเปิดร้านทั้งหมด:</span>
+                                    <strong class="color-amber font-lg" id="totalCapExDisplay">฿0.00</strong>
+                                </div>
+                                <div style="text-align:right;">
+                                    <span style="font-size:11px; display:block; color:var(--text-muted);">ค่าเสื่อมราคาอุปกรณ์สะสมรายเดือน:</span>
+                                    <strong class="color-purple font-lg" id="depreciationMonthly">฿0.00 / เดือน</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-chart-pie"></i> สรุปค่าใช้จ่ายคงที่ประจำเดือน</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="total-overhead-card">
+                            <span class="label">รวมค่าใช้จ่ายประจำเดือนทั้งหมด (Total Fixed Overhead):</span>
+                            <h2 class="amount color-purple" id="totalFixedOverhead">฿0.00 / เดือน</h2>
+                            <div style="display:inline-flex; align-items:center; justify-content:center; gap:6px; margin-top:6px; font-size:13px;" class="subtext">
+                                <span>เฉลี่ย</span>
+                                <strong id="dailyOverheadAvgAmount" class="color-purple" style="font-weight:700;">฿0.00</strong>
+                                <span>/ วัน (คิดที่</span>
+                                <input type="number" id="operatingDaysPerMonth" class="form-control" value="30" min="1" max="31" style="width:55px; text-align:center; padding:2px 4px; font-weight:700; height:26px; display:inline-block;">
+                                <span>วัน/เดือน)</span>
+                            </div>
+                        </div>
+
+                        <div class="chart-container mt-3">
+                            <div style="max-width: 440px; height: 340px; margin: 0 auto; width: 100%;">
+                                <canvas id="overheadChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- TAB 5: BREAK-EVEN ANALYSIS & PROFIT SIMULATION -->
+        <main class="tab-content" id="tab-breakeven">
+            <div class="grid-layout grid-2col">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-bullseye"></i> วิเคราะห์จุดคุ้มทุน & เป้าหมายกำไร</h2>
+                        <p class="subtitle">ระบบคำนวณราคาขายและต้นทุนเฉลี่ยให้อัตโนมัติจากเมนูในร้าน คุณเพียงระบุเป้าหมายกำไรสุทธิประจำเดือน!</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group mb-3">
+                            <label for="calcAvgPrice" style="display:flex; justify-content:space-between; align-items:center;">
+                                <span class="bold">ราคาขายเฉลี่ยต่อแก้ว (บาท):</span>
+                                <span class="badge-pro" style="font-weight:normal; font-size:10px; background:#2563eb;" id="badgeAvgPriceSource">⚡ คำนวณอัตโนมัติจากคลังเมนู</span>
+                            </label>
+                            <input type="number" id="calcAvgPrice" class="form-control input-lg" value="65" step="0.5">
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="calcAvgCogs" style="display:flex; justify-content:space-between; align-items:center;">
+                                <span class="bold">ต้นทุนวัตถุดิบเฉลี่ยต่อแก้ว (บาท):</span>
+                                <span class="badge-pro" style="font-weight:normal; font-size:10px; background:#059669;" id="badgeAvgCogsSource">⚡ คำนวณอัตโนมัติจากคลังเมนู</span>
+                            </label>
+                            <input type="number" id="calcAvgCogs" class="form-control input-lg" value="19.50" step="0.1">
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="targetMonthlyProfit" class="bold color-amber" style="font-size:14px;">
+                                <i class="fa-solid fa-trophy"></i> กำหนดเป้าหมายกำไรสุทธิที่ต้องการต่อเดือน (บาท):
+                            </label>
+                            <div class="input-currency">
+                                <span class="currency-symbol">฿</span>
+                                <input type="number" id="targetMonthlyProfit" class="form-control input-lg" value="30000" step="5000">
+                            </div>
+                            <small class="text-muted" style="font-size:11px; display:block; margin-top:4px;">*กำไรสุทธิที่ต้องการรับเข้ากระเป๋า หลังหักต้นทุนวัตถุดิบและค่าใช้จ่ายประจำเดือน (Overhead) ทั้งหมดเรียบร้อยแล้ว</small>
+                        </div>
+
+                        <hr class="divider">
+
+                        <div class="breakeven-results-box">
+                            <div class="be-card be-break-even">
+                                <h4><i class="fa-solid fa-scale-balanced"></i> จุดคุ้มทุนพอดี (Break-Even)</h4>
+                                <div class="be-qty"><span id="beCupsMonth">0</span> แก้ว/เดือน</div>
+                                <div class="be-daily">ต้องขายได้วันละ <strong id="beCupsDay">0</strong> แก้ว</div>
+                                <div class="be-revenue">ยอดขายรวมคุ้มทุน: ฿<span id="beRevenueMonth">0.00</span> / เดือน</div>
+                            </div>
+
+                            <div class="be-card be-target-profit mt-3">
+                                <h4><i class="fa-solid fa-trophy"></i> เพื่อให้ได้กำไรตามเป้าหมาย (Target Profit)</h4>
+                                <div class="be-qty color-emerald"><span id="targetCupsMonth">0</span> แก้ว/เดือน</div>
+                                <div class="be-daily">ต้องขายได้วันละ <strong id="targetCupsDay">0</strong> แก้ว</div>
+                                <div class="be-revenue">ยอดขายรวมเป้าหมาย: ฿<span id="targetRevenueMonth">0.00</span> / เดือน</div>
+                            </div>
+
+                            <div class="be-card be-shortfall mt-3" style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:12px 14px;">
+                                <h4 style="font-size:13px; font-weight:700; color:#0369a1; margin-bottom:4px;"><i class="fa-solid fa-chart-line-up"></i> จำนวนที่ต้องขายเพิ่มจากจุดคุ้มทุน (Target Profit Shortfall)</h4>
+                                <div class="be-qty color-blue" style="font-size:22px; font-weight:800; color:#0284c7;"><span id="shortfallCupsMonth">0</span> แก้ว/เดือน</div>
+                                <div class="be-daily" style="font-size:12px; color:#0369a1;">ขายเพิ่มจากจุดคุ้มทุนอีกวันละ <strong id="shortfallCupsDay">0</strong> แก้ว</div>
+                                <div class="be-revenue" style="font-size:11px; color:#0284c7; margin-top:2px;">ยอดขายส่วนเพิ่มจากจุดคุ้มทุน: ฿<span id="shortfallRevenueMonth">0.00</span> / เดือน</div>
+                            </div>
+                        </div>
+
+                        <!-- Inflation & Profit Sensitivity Simulator Box -->
+                        <div class="card mt-4" id="inflationSimulatorCard" style="border:1px solid #f59e0b; background:var(--bg-card);">
+                            <div class="card-header" style="background:rgba(245, 158, 11, 0.08); border-bottom:1px solid rgba(245, 158, 11, 0.2); padding:10px 16px;">
+                                <div class="flex-between align-items-center" style="width:100%;">
+                                    <h3 style="color:#d97706; font-size:15px; margin:0;"><i class="fa-solid fa-chart-line-up"></i> 📈 เครื่องมือจำลองวัตถุดิบขึ้นราคา & ความไวต่อราคา (Inflation Simulator)</h3>
+                                    <span class="badge badge-warning" style="font-size:11px;">จำลองผลกระทบกำไร Real-Time</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <p class="subtitle mb-3" style="font-size:12px;">ลองปรับสไลเดอร์เพื่อจำลองว่า ถ้าราคากาแฟ/นมสดขึ้นราคา หรือถ้าร้านปรับขึ้นราคาขายหน้าร้าน กำไรสุทธิของร้านต่อเดือนจะเปลี่ยนแปลงเท่าไร:</p>
+                                
+                                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;" id="simulatorControlsGrid">
+                                    <!-- Control 1: Raw Material Inflation -->
+                                    <div style="background:var(--bg-input); padding:12px; border-radius:8px; border:1px solid var(--border-color);">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                            <label class="bold" style="font-size:12px; color:var(--text-main);">🔥 วัตถุดิบขึ้นราคา (เงินเฟ้อ):</label>
+                                            <span class="badge badge-danger" id="inflationPercentBadge" style="font-size:12px; font-weight:800;">+0%</span>
+                                        </div>
+                                        <input type="range" id="inflationSlider" min="0" max="50" step="1" value="0" style="width:100%; accent-color:#ef4444; cursor:pointer;">
+                                        <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:2px;">
+                                            <span>0% (ราคาเดิม)</span>
+                                            <span>+25%</span>
+                                            <span>+50% (แพงขึ้นครึ่งนึง)</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Control 2: Price Adjustment -->
+                                    <div style="background:var(--bg-input); padding:12px; border-radius:8px; border:1px solid var(--border-color);">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                            <label class="bold" style="font-size:12px; color:var(--text-main);">🏷️ ปรับราคาขายหน้าร้าน:</label>
+                                            <span class="badge badge-success" id="priceAdjustBadge" style="font-size:12px; font-weight:800;">฿0 / แก้ว</span>
+                                        </div>
+                                        <input type="range" id="priceAdjustSlider" min="-10" max="30" step="1" value="0" style="width:100%; accent-color:#10b981; cursor:pointer;">
+                                        <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:2px;">
+                                            <span>-10 บาท (ลดราคา)</span>
+                                            <span>฿0 (ราคาเดิม)</span>
+                                            <span>+30 บาท (ปรับขึ้นราคา)</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Simulation Output Results -->
+                                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-top:14px;" id="simulatorResultsGrid">
+                                    <div style="background:#fff5f5; border:1px solid #fecaca; border-radius:8px; padding:10px; text-align:center;">
+                                        <span style="font-size:11px; color:#991b1b; display:block;">💸 ต้นทุนวัตถุดิบจ่ายเพิ่ม:</span>
+                                        <strong id="simExtraCostMonth" style="font-size:16px; color:#dc2626; font-weight:800;">+฿0 / เดือน</strong>
+                                    </div>
+
+                                    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px; text-align:center;">
+                                        <span style="font-size:11px; color:#166534; display:block;">📊 กำไรสุทธิคาดการณ์ใหม่:</span>
+                                        <strong id="simNewNetProfitMonth" style="font-size:16px; color:#16a34a; font-weight:800;">฿30,000 / เดือน</strong>
+                                    </div>
+
+                                    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px; text-align:center;">
+                                        <span style="font-size:11px; color:#1e40af; display:block;">🎯 เป้าขายใหม่ชดเชยเงินเฟ้อ:</span>
+                                        <strong id="simNewTargetCupsDay" style="font-size:16px; color:#2563eb; font-weight:800;">0 แก้ว / วัน</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-chart-line"></i> กราฟจุดคุ้มทุน (Break-Even Chart)</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 380px;">
+                            <canvas id="breakEvenChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- TAB 6: RECIPE MANAGER & COMPARISON -->
+        <main class="tab-content" id="tab-menu-manager">
+            <div class="card">
+                <div class="card-header flex-between">
+                    <div>
+                        <h2><i class="fa-solid fa-book-open"></i> คลังสูตรเมนูที่บันทึกไว้ (Saved Menu Recipes)</h2>
+                        <p class="subtitle">บันทึก นำเข้า ส่งออกไฟล์ และเปรียบเทียบต้นทุนของแต่ละเมนูในร้าน</p>
+                    </div>
+                    <div class="table-actions">
+                        <button class="btn btn-outline btn-sm" id="btnDownloadCSVTemplate">
+                            <i class="fa-solid fa-file-excel"></i> โหลดเทมเพลต Excel (CSV)
+                        </button>
+                        <button class="btn btn-outline btn-sm" id="btnDownloadJSONTemplate">
+                            <i class="fa-solid fa-file-code"></i> โหลดเทมเพลต JSON
+                        </button>
+                        <button class="btn btn-outline btn-sm" id="btnExportSavedJSON">
+                            <i class="fa-solid fa-download"></i> ส่งออกคลังสูตร (Export)
+                        </button>
+                        <button class="btn btn-danger btn-sm" id="btnClearSavedMenus">
+                            <i class="fa-solid fa-trash"></i> ล้างคลังสูตร
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="savedRecipesTable">
+                            <thead>
+                                <tr>
+                                    <th>ชื่อเมนู</th>
+                                    <th>ต้นทุนวัตถุดิบ (COGS)</th>
+                                    <th>ราคาขายหน้าร้าน</th>
+                                    <th>กำไรขั้นต้น/แก้ว</th>
+                                    <th>% Food Cost</th>
+                                    <th>ราคาแนะนำ Delivery</th>
+                                    <th>การจัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="savedRecipesList">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">ยังไม่มีข้อมูลเมนูที่บันทึกไว้ อัปโหลดไฟล์ หรือคลิก "+ เพิ่มสูตรเมนูกาแฟ" เพื่อเพิ่มรายการ</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modal: Add New Coffee Recipe -->
+        <div class="modal-overlay" id="addRecipeModal">
+            <div class="modal-card" style="max-width: 620px;">
+                <div class="modal-header">
+                    <h3><i class="fa-solid fa-plus-circle"></i> เพิ่มสูตรเมนูกาแฟใหม่</h3>
+                    <button class="modal-close" id="btnCloseAddRecipeModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="formAddNewRecipe">
+                        <div class="form-row mb-3">
+                            <div class="col" style="flex:2;">
+                                <label class="bold" style="font-size:13px;">ชื่อเมนูกาแฟ / เครื่องดื่ม:</label>
+                                <input type="text" id="newRecipeTitle" class="form-control" placeholder="เช่น คาปูชิโน่เย็น (Iced Cappuccino 16oz)" required>
+                            </div>
+                            <div class="col" style="flex:1;">
+                                <label class="bold" style="font-size:13px;">หมวดหมู่:</label>
+                                <select id="newRecipeCategory" class="form-control">
+                                    <option value="กาแฟ">☕ กาแฟ</option>
+                                    <option value="ชา">🍵 ชา</option>
+                                    <option value="นม / โกโก้">🍫 นม / โกโก้</option>
+                                    <option value="สมูทตี้ / โซดา">🍹 สมูทตี้ / โซดา</option>
+                                    <option value="อื่นๆ">📦 อื่นๆ</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row mb-3">
+                            <div class="col">
+                                <label class="bold" style="font-size:12px;">ราคาขาย (บาท):</label>
+                                <input type="number" id="newRecipePrice" class="form-control" value="65" min="1" required>
+                            </div>
+                            <div class="col">
+                                <label style="font-size:12px;">ปริมาณผงกาแฟ:</label>
+                                <input type="text" id="newRecipeDose" class="form-control" placeholder="18.5 กรัม" value="18.5 กรัม">
+                            </div>
+                            <div class="col">
+                                <label style="font-size:12px;">ปริมาณสกัดได้:</label>
+                                <input type="text" id="newRecipeYield" class="form-control" placeholder="36 มล." value="36 มล.">
+                            </div>
+                            <div class="col">
+                                <label style="font-size:12px;">เวลาสกัด:</label>
+                                <input type="text" id="newRecipeTime" class="form-control" placeholder="26 วินาที" value="26 วินาที">
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="bold" style="font-size:13px; color:var(--text-main);"><i class="fa-solid fa-bottle-droplet color-amber"></i> รายการวัตถุดิบและปริมาณ (บรรทัดละ 1 รายการ):</label>
+                            <textarea id="newRecipeIngredientsText" class="form-control" rows="3" placeholder="เมล็ดกาแฟคั่ว Specialty: 18.5 กรัม
+นมสดพาสเจอร์ไรส์: 120 มล.
+นมข้นหวาน: 15 มล.
+น้ำแข็งยูนิค: 200 กรัม
+แก้วพลาสติก 16oz + ฝา: 1 ชิ้น"></textarea>
+                            <small class="text-muted" style="font-size:11px;">รูปแบบ: <code>ชื่อวัตถุดิบ: ปริมาณ หน่วย</code> (ระบบจะดึงราคาซื้อจากคลังกลางให้อัตโนมัติ)</small>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="bold" style="font-size:13px;">ขั้นตอนการชง (บรรทัดละ 1 ขั้นตอน):</label>
+                            <textarea id="newRecipeSteps" class="form-control" rows="3" placeholder="1. สกัดเอสเพรสโซ่ 36 มล.
+2. ตวงนมสด 120 มล. และนมข้น 15 มล. ใส่แก้วคนให้เข้ากัน
+3. ตักน้ำแข็งเต็มแก้ว แล้วราดเอสเพรสโซ่ช็อตด้านบน"></textarea>
+                        </div>
+
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px; font-size:15px;">
+                                <i class="fa-solid fa-bookmark"></i> บันทึกสูตรใหม่เข้าคลัง
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Edit Existing Coffee Recipe -->
+        <div class="modal-overlay" id="editRecipeModal">
+            <div class="modal-card" style="max-width: 620px;">
+                <div class="modal-header">
+                    <h3><i class="fa-solid fa-pen-to-square"></i> แก้ไขสูตรกาแฟ / เครื่องดื่ม</h3>
+                    <button class="modal-close" id="btnCloseEditRecipeModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditExistingRecipe">
+                        <input type="hidden" id="editRecipeIndex">
+                        <div class="form-row mb-3">
+                            <div class="col" style="flex:2;">
+                                <label class="bold" style="font-size:13px;">ชื่อเมนูกาแฟ / เครื่องดื่ม:</label>
+                                <input type="text" id="editRecipeTitle" class="form-control" required>
+                            </div>
+                            <div class="col" style="flex:1;">
+                                <label class="bold" style="font-size:13px;">หมวดหมู่:</label>
+                                <select id="editRecipeCategory" class="form-control">
+                                    <option value="กาแฟ">☕ กาแฟ</option>
+                                    <option value="ชา">🍵 ชา</option>
+                                    <option value="นม / โกโก้">🍫 นม / โกโก้</option>
+                                    <option value="สมูทตี้ / โซดา">🍹 สมูทตี้ / โซดา</option>
+                                    <option value="อื่นๆ">📦 อื่นๆ</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row mb-3">
+                            <div class="col">
+                                <label class="bold" style="font-size:12px;">ราคาขาย (บาท):</label>
+                                <input type="number" id="editRecipePrice" class="form-control" min="1" required>
+                            </div>
+                            <div class="col">
+                                <label style="font-size:12px;">ปริมาณผงกาแฟ:</label>
+                                <input type="text" id="editRecipeDose" class="form-control">
+                            </div>
+                            <div class="col">
+                                <label style="font-size:12px;">ปริมาณสกัดได้:</label>
+                                <input type="text" id="editRecipeYield" class="form-control">
+                            </div>
+                            <div class="col">
+                                <label style="font-size:12px;">เวลาสกัด:</label>
+                                <input type="text" id="editRecipeTime" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="bold" style="font-size:13px; color:var(--text-main);"><i class="fa-solid fa-bottle-droplet color-amber"></i> รายการวัตถุดิบและปริมาณ (บรรทัดละ 1 รายการ):</label>
+                            <textarea id="editRecipeIngredientsText" class="form-control" rows="3" placeholder="เมล็ดกาแฟคั่ว Specialty: 18.5 กรัม
+นมสดพาสเจอร์ไรส์: 120 มล.
+นมข้นหวาน: 15 มล.
+น้ำแข็งยูนิค: 200 กรัม
+แก้วพลาสติก 16oz + ฝา: 1 ชิ้น"></textarea>
+                            <small class="text-muted" style="font-size:11px;">รูปแบบ: <code>ชื่อวัตถุดิบ: ปริมาณ หน่วย</code> (ระบบจะดึงราคาซื้อจากคลังกลางให้อัตโนมัติ)</small>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="bold" style="font-size:13px;">ขั้นตอนการชง (บรรทัดละ 1 ขั้นตอน):</label>
+                            <textarea id="editRecipeSteps" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px; font-size:15px;">
+                                <i class="fa-solid fa-floppy-disk"></i> บันทึกการแก้ไขสูตร
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Select Master Ingredient -->
+        <div class="modal-overlay" id="masterSelectModal">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3><i class="fa-solid fa-boxes-stacked"></i> เลือกวัตถุดิบจากคลังกลางใส่สูตร</h3>
+                    <button class="modal-close" id="btnCloseMasterModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="subtitle mb-3">เลือกรายการวัตถุดิบเพื่อดึงราคาซื้อและขนาดแพ็คเกจมาคำนวณอัตโนมัติ:</p>
+                    <div class="table-responsive" style="max-height: 350px;">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ชื่อวัตถุดิบ</th>
+                                    <th>ราคาซื้อยกแพ็ค</th>
+                                    <th>ขนาดแพ็ค</th>
+                                    <th>เลือก</th>
+                                </tr>
+                            </thead>
+                            <tbody id="masterSelectList">
+                                <!-- Master items for selection -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Supplier Price Comparison & 1-Click Swap -->
+        <div class="modal-overlay" id="supplierCompareModal">
+            <div class="modal-card" style="max-width: 720px;">
+                <div class="modal-header">
+                    <h3><i class="fa-solid fa-code-compare color-amber"></i> เปรียบเทียบราคาซัพพลายเออร์ (Supplier Price Comparison)</h3>
+                    <button class="modal-close" id="btnCloseSupplierCompareModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="subtitle mb-3" style="font-size:12px;">เลือกวัตถุดิบและลองเปรียบเทียบราคาเสนอซื้อจาก 3 ซัพพลายเออร์ เพื่อหาราคาที่คุ้มที่สุด ประหยัดต้นทุนประจำเดือนได้ทันที:</p>
+                    
+                    <div class="form-group mb-3">
+                        <label class="bold" style="font-size:13px;">เลือกวัตถุดิบที่ต้องการเปรียบเทียบ:</label>
+                        <select id="supplierCompareItemSelect" class="form-control input-lg">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <!-- 3 Supplier Cards Grid -->
+                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:16px;" id="supplierCardsGrid">
+                        <!-- Supplier A (Current) -->
+                        <div style="background:var(--bg-input); border:2px solid #3b82f6; border-radius:8px; padding:12px;">
+                            <div style="font-size:11px; font-weight:800; color:#2563eb; margin-bottom:6px;"><i class="fa-solid fa-store"></i> เจ้า A (ปัจจุบัน)</div>
+                            <div class="form-group mb-2">
+                                <label style="font-size:10px; color:var(--text-muted);">ราคาซื้อยกแพ็ค (บาท):</label>
+                                <input type="number" id="suppAPrice" class="form-control" style="font-weight:700;" readonly>
+                            </div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">
+                                เฉลี่ย: <strong id="suppAUnitCost" style="color:var(--text-main);">฿0.00</strong>
+                            </div>
+                            <button class="btn btn-sm btn-outline" style="width:100%; font-size:11px;" disabled>ใช้งานปัจจุบัน</button>
+                        </div>
+
+                        <!-- Supplier B -->
+                        <div style="background:var(--bg-input); border:2px solid #10b981; border-radius:8px; padding:12px;">
+                            <div style="font-size:11px; font-weight:800; color:#059669; margin-bottom:6px;"><i class="fa-solid fa-truck-ramp-box"></i> เจ้า B (เปรียบเทียบ)</div>
+                            <div class="form-group mb-2">
+                                <label style="font-size:10px; color:var(--text-muted);">ราคาเสนอซื้อ (บาท):</label>
+                                <input type="number" id="suppBPrice" class="form-control" style="font-weight:700;" placeholder="กรอกราคา">
+                            </div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">
+                                เฉลี่ย: <strong id="suppBUnitCost" style="color:#059669;">฿0.00</strong>
+                            </div>
+                            <button class="btn btn-sm btn-primary" id="btnSwapToSuppB" style="width:100%; font-size:11px; background:#10b981; border-color:#10b981;">
+                                ⚡️ สลับใช้เจ้า B
+                            </button>
+                        </div>
+
+                        <!-- Supplier C -->
+                        <div style="background:var(--bg-input); border:2px solid #f59e0b; border-radius:8px; padding:12px;">
+                            <div style="font-size:11px; font-weight:800; color:#d97706; margin-bottom:6px;"><i class="fa-solid fa-warehouse"></i> เจ้า C (เปรียบเทียบ)</div>
+                            <div class="form-group mb-2">
+                                <label style="font-size:10px; color:var(--text-muted);">ราคาเสนอซื้อ (บาท):</label>
+                                <input type="number" id="suppCPrice" class="form-control" style="font-weight:700;" placeholder="กรอกราคา">
+                            </div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">
+                                เฉลี่ย: <strong id="suppCUnitCost" style="color:#d97706;">฿0.00</strong>
+                            </div>
+                            <button class="btn btn-sm btn-primary" id="btnSwapToSuppC" style="width:100%; font-size:11px; background:#f59e0b; border-color:#f59e0b;">
+                                ⚡️ สลับใช้เจ้า C
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Savings Analysis Summary Card -->
+                    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <h4 style="font-size:13px; font-weight:800; color:#166534; margin-bottom:2px;"><i class="fa-solid fa-piggy-bank"></i> ผลต่างการประหยัดต้นทุนประจำเดือน</h4>
+                            <p style="font-size:11px; color:#15803d; margin:0;" id="supplierSavingDescription">กรอกราคาเสนอซื้อจากเจ้า B หรือ C เพื่อคำนวณเงินที่ประหยัดได้</p>
+                        </div>
+                        <strong id="supplierSavingsAmount" style="font-size:20px; font-weight:800; color:#16a34a;">฿0.00 / เดือน</strong>
+                    </div>
+                </div>
+            </div>
+        <!-- Modal: House Blend Scaler / Coffee Beans Blending Cost Calculator -->
+        <div class="modal-overlay" id="blendCalculatorModal">
+            <div class="modal-card" style="max-width: 680px;">
+                <div class="modal-header">
+                    <h3><i class="fa-solid fa-mug-saucer color-amber"></i> เครื่องมือคำนวณต้นทุนเมล็ดกาแฟเบลนด์ (House Blend Scaler)</h3>
+                    <button class="modal-close" id="btnCloseBlendModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="subtitle mb-3" style="font-size:12px;">ผสมสัดส่วนเมล็ดกาแฟ 2-4 ตัว เพื่อคำนวณต้นทุนต่อกิโลกรัม และต้นทุนช็อตเอสเพรสโซ่ประจำร้านให้อัตโนมัติ:</p>
+
+                    <div class="form-group mb-3">
+                        <label class="bold" style="font-size:13px;">ชื่อสูตรเบลนด์กาแฟประจำร้าน:</label>
+                        <input type="text" id="blendRecipeTitle" class="form-control input-lg" value="Specialty House Blend (60/30/10)">
+                    </div>
+
+                    <!-- 3 Blend Components Grid -->
+                    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;" id="blendRowsContainer">
+                        <!-- Row 1 -->
+                        <div style="display:flex; gap:8px; align-items:center;" class="blend-row">
+                            <input type="text" class="form-control blend-name" placeholder="ชื่อเมล็ดกาแฟตัวที่ 1" value="อาราบิก้าไทย (Thai Arabica)">
+                            <div style="width:130px; display:flex; align-items:center;">
+                                <input type="number" class="form-control blend-price" placeholder="ราคา/500g" value="380" style="width:85px;">
+                                <span style="font-size:10px; margin-left:4px;">฿/500g</span>
+                            </div>
+                            <div style="width:110px; display:flex; align-items:center;">
+                                <input type="number" class="form-control blend-ratio" placeholder="สัดส่วน %" value="60" style="width:65px;">
+                                <span style="font-size:11px; margin-left:4px;">%</span>
+                            </div>
+                        </div>
+
+                        <!-- Row 2 -->
+                        <div style="display:flex; gap:8px; align-items:center;" class="blend-row">
+                            <input type="text" class="form-control blend-name" placeholder="ชื่อเมล็ดกาแฟตัวที่ 2" value="บราซิล ซานโตส (Brazil Santos)">
+                            <div style="width:130px; display:flex; align-items:center;">
+                                <input type="number" class="form-control blend-price" placeholder="ราคา/500g" value="650" style="width:85px;">
+                                <span style="font-size:10px; margin-left:4px;">฿/500g</span>
+                            </div>
+                            <div style="width:110px; display:flex; align-items:center;">
+                                <input type="number" class="form-control blend-ratio" placeholder="สัดส่วน %" value="30" style="width:65px;">
+                                <span style="font-size:11px; margin-left:4px;">%</span>
+                            </div>
+                        </div>
+
+                        <!-- Row 3 -->
+                        <div style="display:flex; gap:8px; align-items:center;" class="blend-row">
+                            <input type="text" class="form-control blend-name" placeholder="ชื่อเมล็ดกาแฟตัวที่ 3" value="โรบัสต้าน่าน (Nan Robusta)">
+                            <div style="width:130px; display:flex; align-items:center;">
+                                <input type="number" class="form-control blend-price" placeholder="ราคา/500g" value="280" style="width:85px;">
+                                <span style="font-size:10px; margin-left:4px;">฿/500g</span>
+                            </div>
+                            <div style="width:110px; display:flex; align-items:center;">
+                                <input type="number" class="form-control blend-ratio" placeholder="สัดส่วน %" value="10" style="width:65px;">
+                                <span style="font-size:11px; margin-left:4px;">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calculated Blend Output Card -->
+                    <div style="background:#fffbe6; border:1px solid #ffe58f; border-radius:8px; padding:12px 16px; margin-bottom:14px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-size:12px; color:#873800; font-weight:700;">รวมสัดส่วนเบลนด์: <strong id="blendRatioSum">100%</strong></span>
+                            <span style="font-size:12px; color:#873800; font-weight:700;">ต้นทุนเฉลี่ย: <strong id="blendAvgPriceKg" style="font-size:15px; color:#d97706;">฿451.00 / 500g</strong></span>
+                        </div>
+                        <div style="font-size:12px; color:#d97706;">
+                            ☕ ต้นทุนช็อตเอสเพรสโซ่ (18.5g): <strong id="blendCostPerShot" style="font-size:14px; color:#b45309;">฿16.69 / ช็อต</strong>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" id="btnSaveBlendToMaster" style="width:100%; justify-content:center; padding:10px;">
+                        <i class="fa-solid fa-floppy-disk"></i> ⚡️ บันทึกเป็นวัตถุดิบหลักในคลังกลาง
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Barista Recipe QR Code -->
+        <div class="modal-overlay" id="qrCodeModal">
+            <div class="modal-card" style="max-width: 420px; text-align:center;">
+                <div class="modal-header">
+                    <h3><i class="fa-solid fa-qrcode color-amber"></i> QR Code สูตรชงประจำบาร์</h3>
+                    <button class="modal-close" id="btnCloseQrCodeModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <h4 id="qrRecipeTitle" style="font-size:16px; font-weight:800; margin-bottom:4px; color:var(--text-main);">กาแฟลาเต้เย็น (16oz)</h4>
+                    <p class="subtitle mb-3" style="font-size:11px;">ใช้สแกนผ่านโทรศัพท์มือถือหรือแท็บเล็ต เพื่อเปิดดูขั้นตอนการชงหน้าบาร์ได้ทันที</p>
+                    
+                    <div style="background:#fff; padding:16px; border-radius:12px; border:2px solid var(--border-color); display:inline-flex; justify-content:center; align-items:center; min-width:220px; min-height:220px; margin-bottom:12px;" id="qrCodeCanvasBox">
+                        <!-- Canvas / QR rendered locally -->
+                    </div>
+
+                    <div style="font-size:12px; color:var(--text-muted); margin-bottom:14px;" id="qrRecipeSummaryText">
+                        <!-- Dose / Yield / Time -->
+                    </div>
+
+                    <a id="btnDownloadQrCode" href="" download="recipe_qr.png" class="btn btn-primary" style="width:100%; justify-content:center; text-decoration:none;">
+                        <i class="fa-solid fa-download"></i> ดาวน์โหลดภาพ QR Code (PNG)
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Printable Whole Shop & Best-Seller PDF Report Container -->
+    <div id="printableReportContainer" class="printable-report"></div>
+
+    <!-- Printable Barista Bar Card A6 Container -->
+    <div id="printableBaristaCard" class="printable-barista-card"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+

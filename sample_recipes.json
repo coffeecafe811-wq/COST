@@ -1,0 +1,29 @@
+[
+  {
+    "name": "ชาไทยเย็นเข้มข้น (Thai Iced Tea 16oz)",
+    "sellingPrice": 60,
+    "wastagePercent": 5,
+    "ingredients": [
+      { "name": "ใบชาไทยตรามือ", "price": 135, "packQty": 400, "packUnit": "g", "useQty": 15, "useUnit": "g" },
+      { "name": "นมสดพาสเจอร์ไรส์", "price": 95, "packQty": 2000, "packUnit": "ml", "useQty": 100, "useUnit": "ml" },
+      { "name": "นมข้นหวาน", "price": 55, "packQty": 380, "packUnit": "ml", "useQty": 25, "useUnit": "ml" },
+      { "name": "นมข้นจืด", "price": 48, "packQty": 380, "packUnit": "ml", "useQty": 15, "useUnit": "ml" },
+      { "name": "น้ำแข็ง", "price": 60, "packQty": 15000, "packUnit": "g", "useQty": 200, "useUnit": "g" },
+      { "name": "แก้วพลาสติก 16oz + ฝาฮาฟ", "price": 220, "packQty": 100, "packUnit": "ชิ้น", "useQty": 1, "useUnit": "ชิ้น" },
+      { "name": "หลอด + สติ๊กเกอร์", "price": 80, "packQty": 100, "packUnit": "ชุด", "useQty": 1, "useUnit": "ชุด" }
+    ]
+  },
+  {
+    "name": "ชาเขียวมะนาวเย็น (Iced Honey Lemon Green Tea 16oz)",
+    "sellingPrice": 65,
+    "wastagePercent": 5,
+    "ingredients": [
+      { "name": "ใบชาเขียวมะลิ", "price": 180, "packQty": 500, "packUnit": "g", "useQty": 12, "useUnit": "g" },
+      { "name": "น้ำผึ้งแท้ 100%", "price": 190, "packQty": 700, "packUnit": "ml", "useQty": 20, "useUnit": "ml" },
+      { "name": "น้ำมะนาวคั้นสด", "price": 120, "packQty": 1000, "packUnit": "ml", "useQty": 15, "useUnit": "ml" },
+      { "name": "น้ำเชื่อมแท้", "price": 120, "packQty": 750, "packUnit": "ml", "useQty": 10, "useUnit": "ml" },
+      { "name": "น้ำแข็ง", "price": 60, "packQty": 15000, "packUnit": "g", "useQty": 200, "useUnit": "g" },
+      { "name": "แก้วพลาสติก 16oz + ฝาฮาฟ", "price": 220, packQty: 100, "packUnit": "ชิ้น", "useQty": 1, "useUnit": "ชิ้น" }
+    ]
+  }
+]

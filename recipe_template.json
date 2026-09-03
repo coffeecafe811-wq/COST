@@ -1,0 +1,53 @@
+[
+  {
+    "name": "เอสเพรสโซ่เย็น (Iced Thai Espresso 16oz)",
+    "sellingPrice": 65,
+    "wastagePercent": 5,
+    "ingredients": [
+      { "name": "เมล็ดกาแฟคั่วเข้ม (Dark Roast Beans)", "price": 400, "packQty": 500, "packUnit": "g", "useQty": 20, "useUnit": "g" },
+      { "name": "นมผสม (Condensed Milk Mix)", "price": 65, "packQty": 500, "packUnit": "ml", "useQty": 30, "useUnit": "ml" },
+      { "name": "นมสดพาสเจอร์ไรส์", "price": 95, "packQty": 2000, "packUnit": "ml", "useQty": 60, "useUnit": "ml" },
+      { "name": "น้ำแข็ง", "price": 60, "packQty": 15000, "packUnit": "g", "useQty": 200, "useUnit": "g" },
+      { "name": "แก้วพลาสติก 16oz + ฝาฮาฟ", "price": 220, "packQty": 100, "packUnit": "ชิ้น", "useQty": 1, "useUnit": "ชิ้น" },
+      { "name": "หลอด + ปลอกแก้ว", "price": 90, "packQty": 100, "packUnit": "ชุด", "useQty": 1, "useUnit": "ชุด" }
+    ]
+  },
+  {
+    "name": "มัทฉะยูซุโซดา (Matcha Yuzu Soda 16oz)",
+    "sellingPrice": 85,
+    "wastagePercent": 5,
+    "ingredients": [
+      { "name": "ผงมัทฉะเกรดพรีเมียม", "price": 550, "packQty": 100, "packUnit": "g", "useQty": 4, "useUnit": "g" },
+      { "name": "ยูซุเพียวเร่ (Yuzu Puree)", "price": 480, "packQty": 1000, "packUnit": "ml", "useQty": 30, "useUnit": "ml" },
+      { "name": "โซดา", "price": 10, "packQty": 325, "packUnit": "ml", "useQty": 120, "useUnit": "ml" },
+      { "name": "น้ำเชื่อมแท้", "price": 120, "packQty": 750, "packUnit": "ml", "useQty": 10, "useUnit": "ml" },
+      { "name": "น้ำแข็ง", "price": 60, "packQty": 15000, "packUnit": "g", "useQty": 200, "useUnit": "g" },
+      { "name": "แก้วทรงสูง 16oz + ฝา", "price": 240, "packQty": 100, "packUnit": "ชิ้น", "useQty": 1, "useUnit": "ชิ้น" }
+    ]
+  },
+  {
+    "name": "ชานมไต้หวันไข่มุก (Taiwan Milk Tea 16oz)",
+    "sellingPrice": 60,
+    "wastagePercent": 5,
+    "ingredients": [
+      { "name": "ใบชาไต้หวันแท้", "price": 220, "packQty": 500, "packUnit": "g", "useQty": 15, "useUnit": "g" },
+      { "name": "ครีมเทียมพรีเมียม", "price": 110, "packQty": 1000, "packUnit": "g", "useQty": 20, "useUnit": "g" },
+      { "name": "น้ำเชื่อมแท้", "price": 120, "packQty": 750, "packUnit": "ml", "useQty": 20, "useUnit": "ml" },
+      { "name": "เม็ดไข่มุกบราวน์ซูการ์", "price": 85, "packQty": 1000, "packUnit": "g", "useQty": 50, "useUnit": "g" },
+      { "name": "น้ำแข็ง", "price": 60, "packQty": 15000, "packUnit": "g", "useQty": 200, "useUnit": "g" },
+      { "name": "แก้วซีล 16oz + ฟิล์มซีล", "price": 180, "packQty": 100, "packUnit": "ชุด", "useQty": 1, "useUnit": "ชุด" }
+    ]
+  },
+  {
+    "name": "สตรอว์เบอร์รี่สมูทตี้ (Strawberry Smoothie 16oz)",
+    "sellingPrice": 75,
+    "wastagePercent": 5,
+    "ingredients": [
+      { "name": "สตรอว์เบอร์รี่แช่แข็ง", "price": 210, "packQty": 1000, "packUnit": "g", "useQty": 100, "useUnit": "g" },
+      { "name": "โยเกิร์ตรสธรรมชาติ", "price": 145, "packQty": 1000, "packUnit": "g", "useQty": 50, "useUnit": "g" },
+      { "name": "ไซรัปสตรอว์เบอร์รี่", "price": 250, "packQty": 750, "packUnit": "ml", "useQty": 20, "useUnit": "ml" },
+      { "name": "น้ำแข็ง", "price": 60, "packQty": 15000, "packUnit": "g", "useQty": 250, "useUnit": "g" },
+      { "name": "แก้วแคปซูล 16oz + ฝาโดม", "price": 260, "packQty": 100, "packUnit": "ชิ้น", "useQty": 1, "useUnit": "ชิ้น" }
+    ]
+  }
+]
